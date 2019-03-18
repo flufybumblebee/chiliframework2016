@@ -24,6 +24,8 @@
 #include "Mouse.h"
 #include "Graphics.h"
 
+#include "Tetris.h"
+
 class Game
 {
 public:
@@ -32,15 +34,11 @@ public:
 	Game& operator=( const Game& ) = delete;
 	void Go();
 private:
-	void ComposeFrame();
 	void UpdateModel();
-	/********************************/
-	/*  User Functions              */
-	/********************************/
+	void ComposeFrame();
 private:
 	MainWindow& wnd;
 	Graphics gfx;
-	/********************************/
-	/*  User Variables              */
-	/********************************/
+private:
+	Tetris tetris;
 };

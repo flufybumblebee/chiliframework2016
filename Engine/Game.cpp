@@ -24,8 +24,10 @@
 Game::Game( MainWindow& wnd )
 	:
 	wnd( wnd ),
-	gfx( wnd )
+	gfx( wnd ),
+	tetris(wnd.kbd,gfx)
 {
+	tetris.Setup();
 }
 
 void Game::Go()
@@ -38,8 +40,10 @@ void Game::Go()
 
 void Game::UpdateModel()
 {
+	tetris.Update(/*wnd.kbd*/);
 }
 
 void Game::ComposeFrame()
 {
+	tetris.Draw(/*gfx*/);
 }

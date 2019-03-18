@@ -48,15 +48,22 @@ private:
 public:
 	Graphics( class HWNDKey& key );
 	Graphics( const Graphics& ) = delete;
+	~Graphics();
 	Graphics& operator=( const Graphics& ) = delete;
-	void EndFrame();
+
+public:
 	void BeginFrame();
+	void EndFrame();
+
 	void PutPixel( int x,int y,int r,int g,int b )
 	{
 		PutPixel( x,y,{ unsigned char( r ),unsigned char( g ),unsigned char( b ) } );
 	}
 	void PutPixel( int x,int y,Color c );
-	~Graphics();
+
+	void DrawLine(int x1, int y1, int x2, int y2, Color c);
+	void DrawCircle(int centerX, int centerY, int radius, Color c);
+	void DrawRect(bool filled, int left, int top, int width, int height, Color color);
 private:
 	Microsoft::WRL::ComPtr<IDXGISwapChain>				pSwapChain;
 	Microsoft::WRL::ComPtr<ID3D11Device>				pDevice;
