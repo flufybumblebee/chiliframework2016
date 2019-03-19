@@ -4,54 +4,13 @@ Tetris::Tetris(Keyboard& kbd, Graphics& gfx)
 	:
 	kbd(kbd),
 	gfx(gfx)
-{
-	key[0] = false;
-	key[1] = false;
-	key[2] = false;
-	key[3] = false;
-
-	blockBuffer_Fixed = new char[width * height];
-	blockBuffer_Shown = new char[width * height];
-
-	blocks				= new Block[width * height];
-	blocks_next			= new Block[4 * 4];
-	blocks_pauseText	= new Block[35 * 7];
-	blocks_gameOverText = new Block[29 * 13];
-
-	{
-		std::mt19937 rng;
-		rng.seed(std::random_device()());
-		std::uniform_int_distribution<std::mt19937::result_type> dist(0, 6); // distribution in range [1, 6]
-		currentTetris = dist(rng);
-	}
-
-	{
-		std::mt19937 rng;
-		rng.seed(std::random_device()());
-		std::uniform_int_distribution<std::mt19937::result_type> dist(0, 6); // distribution in range [1, 6]
-		nextTetris = dist(rng);
-	}
+{	
+	currentTetris = Random(0, 6);	
+	nextTetris = Random(0, 6);	
 }
 
 Tetris::~Tetris()
 {
-	delete[] blockBuffer_Fixed;
-	blockBuffer_Fixed = nullptr;
-
-	delete[] blockBuffer_Shown;
-	blockBuffer_Shown = nullptr;
-
-	delete[] blocks;
-	blocks = nullptr;
-
-	delete[] blocks_next;
-	blocks_next = nullptr;
-
-	delete[] blocks_pauseText;
-	blocks_pauseText = nullptr;
-
-	delete[] blocks_gameOverText;
-	blocks_gameOverText = nullptr;
 }
 
 void Tetris::Setup()
@@ -79,20 +38,9 @@ void Tetris::Update()
 				currentX = width / 2 - 2;
 				currentY = 0;
 				currentRotation = 0;
-
-				{
-					std::mt19937 rng;
-					rng.seed(std::random_device()());
-					std::uniform_int_distribution<std::mt19937::result_type> dist(0, 6); // distribution in range [1, 6]
-					currentTetris = dist(rng);
-				}
-
-				{
-					std::mt19937 rng;
-					rng.seed(std::random_device()());
-					std::uniform_int_distribution<std::mt19937::result_type> dist(0, 6); // distribution in range [1, 6]
-					nextTetris = dist(rng);
-				}
+				
+				currentTetris = Random(0,6);				
+				nextTetris = Random(0,6);				
 
 				UpdateNext();
 			}
@@ -126,27 +74,14 @@ void Tetris::Update()
 			forceDown = (speedCounter == speed);
 
 			// input
-
-			if (kbd.KeyIsPressed(VK_LEFT))	key[0] = true;
-			else							key[0] = false;
-
-			if (kbd.KeyIsPressed(VK_RIGHT))	key[1] = true;
-			else							key[1] = false;
-
-			if (kbd.KeyIsPressed(VK_DOWN))	key[2] = true;
-			else							key[2] = false;
-
-			if (kbd.KeyIsPressed(VK_UP))	key[3] = true;
-			else							key[3] = false;
-
-			currentX -= (key[0] && DoesTetrisFit(currentTetris, currentRotation, currentX - 1, currentY + 0)) ? 1 : 0;
-			currentX += (key[1] && DoesTetrisFit(currentTetris, currentRotation, currentX + 1, currentY + 0)) ? 1 : 0;
-			currentY += (key[2] && DoesTetrisFit(currentTetris, currentRotation, currentX + 0, currentY + 1)) ? 1 : 0;
+			currentX -= (kbd.KeyIsPressed(VK_LEFT) && DoesTetrisFit(currentTetris, currentRotation, currentX - 1, currentY + 0)) ? 1 : 0;
+			currentX += (kbd.KeyIsPressed(VK_RIGHT) && DoesTetrisFit(currentTetris, currentRotation, currentX + 1, currentY + 0)) ? 1 : 0;
+			currentY += (kbd.KeyIsPressed(VK_DOWN) && DoesTetrisFit(currentTetris, currentRotation, currentX + 0, currentY + 1)) ? 1 : 0;
 
 			// block up/rotate key from being pressed every frame
-			if (key[3])
+			if (kbd.KeyIsPressed(VK_UP))
 			{
-				currentRotation += (!keyIsPressed && key[3] && DoesTetrisFit(currentTetris, currentRotation + 1, currentX, currentY)) ? 1 : 0;
+				currentRotation += (!keyIsPressed && DoesTetrisFit(currentTetris, currentRotation + 1, currentX, currentY)) ? 1 : 0;
 				keyIsPressed = true;
 			}
 			else
@@ -218,11 +153,7 @@ void Tetris::Update()
 					currentRotation = 0;
 
 					currentTetris = nextTetris;
-
-					std::mt19937 rng;
-					rng.seed(std::random_device()());
-					std::uniform_int_distribution<std::mt19937::result_type> dist(0, 6); // distribution in range [1, 6]
-					nextTetris = dist(rng);
+					nextTetris = Random(0,6);
 
 					UpdateNext();
 
@@ -290,6 +221,7 @@ void Tetris::Update()
 
 void Tetris::Draw()
 {
+	// Draw Playing Field and current tetromino
 	for (int x = 0; x < width; x++)
 	{
 		for (int y = 0; y < height; y++)
@@ -298,32 +230,35 @@ void Tetris::Draw()
 		}
 	}
 
+	// Draw next tetromino
 	for (int x = 0; x < 4; x++)
 	{
 		for (int y = 0; y < 4; y++)
 		{
-			blocks_next[y*4 + x].Draw(gfx);
+			blocks_Next[y*4 + x].Draw(gfx);
 		}
 	}
 
+	// Draw Paused Text
 	if (gameIsPaused)
 	{
 		for (int x = 0; x < 35; x++)
 		{
 			for (int y = 0; y < 7; y++)
 			{
-				blocks_pauseText[y * 35 + x].Draw(gfx);
+				blocks_PauseText[y * 35 + x].Draw(gfx);
 			}
 		}
 	}
 
+	// Draw Game Over Text
 	if (gameIsOver)
 	{
 		for (int x = 0; x < 29; x++)
 		{
 			for (int y = 0; y < 13; y++)
 			{
-				blocks_gameOverText[y * 29 + x].Draw(gfx);
+				blocks_GameOverText[y * 29 + x].Draw(gfx);
 			}
 		}
 	}
@@ -337,10 +272,10 @@ void Tetris::SetBlocks()
 		for (int y = 0; y < height; y++)
 		{
 			blocks[y*width + x].Set(
-				offsetWidth + (x * blockWidth),
-				offsetHeight + (y* blockHeight),
-				blockWidth,
-				blockHeight,
+				offsetWidth + (x * blocksW),
+				offsetHeight + (y* blocksH),
+				blocksW,
+				blocksH,
 				blockBuffer_Shown[y*width + x]);
 		}
 	}
@@ -410,6 +345,15 @@ void Tetris::ClearAndResetPlayingField()
 	}
 }
 
+int Tetris::Random(const int min, const int max)
+{
+	std::mt19937 rng;
+	rng.seed(std::random_device()());
+	std::uniform_int_distribution<std::mt19937::result_type> dist(min, max);
+	
+	return dist(rng);
+}
+
 void Tetris::SetNext()
 {
 	char color;
@@ -426,11 +370,11 @@ void Tetris::SetNext()
 				color = " ABCDEFG=#"[nextTetris+1];
 			}
 
-			blocks_next[y*4 + x].Set(
-				offsetWidth + (blockWidth * width) + (x * blockWidth),
-				offsetHeight + (y * blockHeight),
-				blockWidth,
-				blockHeight,
+			blocks_Next[y*4 + x].Set(
+				offsetWidth + (blocksW * width) + (x * blocksW),
+				offsetHeight + (y * blocksH),
+				blocksW,
+				blocksH,
 				color);
 		}
 	}
@@ -447,28 +391,24 @@ void Tetris::SetTextPause()
 	text_Pause.append("...................................");
 
 	char color;
-	for (int x = 0; x < 35; x++)
+	for (int x = 0; x < pauseW; x++)
 	{
-		for (int y = 0; y < 7; y++)
+		for (int y = 0; y < pauseH; y++)
 		{
-			if (text_Pause.at(y * 35 + x) == '.')
+			if (text_Pause.at(y * pauseW + x) == '.')
 			{
 				color = " ABCDEFG=#"[0];
 			}
 			else
 			{
-				std::mt19937 rng;
-				rng.seed(std::random_device()());
-				std::uniform_int_distribution<std::mt19937::result_type> dist(0, 6);
-				const int randCol = dist(rng);
-				color = " ABCDEFG=#"[randCol + 1];
+				color = " ABCDEFG=#"[Random(0,6) + 1];
 			}
 
-			blocks_pauseText[y * 35 + x].Set(
-				(gfx.ScreenWidth / 2) - ((35 / 2)*blockWidth) + (x * blockWidth),
-				(gfx.ScreenHeight / 2) - ((7 / 2)*blockHeight) + (y * blockHeight),
-				blockWidth,
-				blockHeight,
+			blocks_PauseText[y * pauseW + x].Set(
+				(gfx.ScreenWidth / 2) - ((pauseW / 2)*blocksW) + (x * blocksW),
+				(gfx.ScreenHeight / 2) - ((pauseH / 2)*blocksH) + (y * blocksH),
+				blocksW,
+				blocksH,
 				color);
 		}
 	}
@@ -491,28 +431,24 @@ void Tetris::SetTextGameOver()
 	text_GameOver.append(".............................");
 
 	char color;
-	for (int x = 0; x < 29; x++)
+	for (int x = 0; x < gameOverW; x++)
 	{
-		for (int y = 0; y < 13; y++)
+		for (int y = 0; y < gameOverH; y++)
 		{
-			if (text_GameOver.at(y * 29 + x) == '.')
+			if (text_GameOver.at(y * gameOverW + x) == '.')
 			{
 				color = " ABCDEFG=#"[0];
 			}
 			else
-			{
-				std::mt19937 rng;
-				rng.seed(std::random_device()());
-				std::uniform_int_distribution<std::mt19937::result_type> dist(0, 6); // distribution in range [1, 6]
-				const int randCol = dist(rng);
-				color = " ABCDEFG=#"[randCol + 1];
+			{				
+				color = " ABCDEFG=#"[Random(0,6) + 1];
 			}
 
-			blocks_gameOverText[y * 29 + x].Set(
-				(gfx.ScreenWidth/2) - ((29/2)*blockWidth) + (x * blockWidth),
-				(gfx.ScreenHeight/2) - ((13/2)*blockHeight) + (y * blockHeight),
-				blockWidth,
-				blockHeight,
+			blocks_GameOverText[y * gameOverW + x].Set(
+				(gfx.ScreenWidth/2) - ((gameOverW /2)*blocksW) + (x * blocksW),
+				(gfx.ScreenHeight/2) - ((gameOverH /2)*blocksH) + (y * blocksH),
+				blocksW,
+				blocksH,
 				color);
 		}
 	}
@@ -533,7 +469,7 @@ void Tetris::UpdateNext()
 			{
 				color = " ABCDEFG=#"[nextTetris+1];
 			}
-			blocks_next[y * 4 + x].SetColor(color);
+			blocks_Next[y * 4 + x].SetColor(color);
 		}
 	}
 }
